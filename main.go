@@ -18,14 +18,10 @@ type Message struct {
 	TimeStamp string
 }
 
-var messages []*Message
+var Messages []*Message
 
 func tempHandler(w http.ResponseWriter, r *http.Request) {
-	index.Execute(w, nil)
-	
-	for _, msg := range messages {
-		w.Write([]byte(fmt.Sprintf("<span>User:%s</span><br/><span>Message:%s</span><br/><span>Message:%s</span><br/>", msg.User, msg.Text, msg.TimeStamp)))
-	}
+	index.Execute(w, Messages)
 }
 
 func addMessage(w http.ResponseWriter, r *http.Request) {
@@ -35,15 +31,22 @@ func addMessage(w http.ResponseWriter, r *http.Request) {
 	text := r.Form.Get("text")
 	timeStamp := time.Now().Format(time.RFC822)
 
-	messages = append(messages, &Message{user, text, timeStamp})
+	Messages = append(Messages, &Message{
+		User:      user,
+		Text:      text,
+		TimeStamp: timeStamp,
+	})
 
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
 }
 
 func main() {
 	mux := http.NewServeMux()
+	fs := http.FileServer(http.Dir("assets"))
+
 	mux.HandleFunc("/", tempHandler)
 	mux.HandleFunc("/add-message", addMessage)
+	mux.Handle("/assets/", http.StripPrefix("/assets/", fs))
 
 	fmt.Printf("Listening on %s...", PORT)
 

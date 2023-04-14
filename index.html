@@ -9,7 +9,6 @@
   </head>
   <body>
     <main>
-      <section></section>
       <section>
         <form action="/add-message" method="post">
           <label for="user">User</label>
@@ -18,6 +17,19 @@
           <input type="text" id="text" name="text" /><br /><br />
           <input type="submit" value="Submit" />
         </form>
+      </section>
+      <section>
+        <ul>
+          <ul>
+            {{range .}}
+            <li class="message__container">
+              <span class="message__user">{{ .User }}:</span>
+              <span class="message__text">{{ .Text }}</span>
+              <span class="message__time">{{ .TimeStamp }}</span>
+            </li>
+            {{end}}
+          </ul>
+        </ul>
       </section>
     </main>
   </body>
