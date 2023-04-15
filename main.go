@@ -2,55 +2,63 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
-	"time"
+	"github.com/gorilla/websocket"
 )
 
 const PORT = "8000"
 
-var index = template.Must(template.ParseFiles("index.html"))
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
 type Message struct {
-	Text      string
-	User      string
-	TimeStamp string
+	Text string `json:"text"`
+	// TimeStamp string
 }
 
-var Messages []*Message
+var messages []websocket.Conn
 
-func tempHandler(w http.ResponseWriter, r *http.Request) {
-	index.Execute(w, Messages)
+func handleHomePath(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "index.html")
 }
 
-func addMessage(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+func handleMessages(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
 
-	user := r.Form.Get("user")
-	text := r.Form.Get("text")
-	timeStamp := time.Now().Format(time.RFC822)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	Messages = append(Messages, &Message{
-		User:      user,
-		Text:      text,
-		TimeStamp: timeStamp,
-	})
+	messages = append(messages, *conn)
 
-	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
+	for {
+		_, msg, err := conn.ReadMessage()
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for _, message := range messages {
+			m := &Message{Text: string(msg)}
+
+			if err = message.WriteJSON(m); err != nil {
+				return
+			}
+		}
+	}
 }
 
 func main() {
-	mux := http.NewServeMux()
+	http.HandleFunc("/", handleHomePath)
+	http.HandleFunc("/chat", handleMessages)
+
 	fs := http.FileServer(http.Dir("assets"))
+	http.Handle("/assets/", http.StripPrefix("/assets/", fs))
 
-	mux.HandleFunc("/", tempHandler)
-	mux.HandleFunc("/add-message", addMessage)
-	mux.Handle("/assets/", http.StripPrefix("/assets/", fs))
-
-	fmt.Printf("Listening on %s...", PORT)
-
-	err := http.ListenAndServe(fmt.Sprintf(":%s", PORT), mux)
+	err := http.ListenAndServe(fmt.Sprintf(":%s", PORT), nil)
 
 	if err != nil {
 		log.Fatalln("Server Error:", err)

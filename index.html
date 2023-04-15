@@ -9,28 +9,47 @@
   </head>
   <body>
     <main>
-      <section>
-        <form action="/add-message" method="post">
-          <label for="user">User</label>
-          <input type="text" id="user" name="user" /><br /><br />
-          <label for="text">Message:</label>
-          <input type="text" id="text" name="text" /><br /><br />
-          <input type="submit" value="Submit" />
-        </form>
-      </section>
-      <section>
-        <ul>
-          <ul>
-            {{range .}}
-            <li class="message__container">
-              <span class="message__user">{{ .User }}:</span>
-              <span class="message__text">{{ .Text }}</span>
-              <span class="message__time">{{ .TimeStamp }}</span>
-            </li>
-            {{end}}
-          </ul>
-        </ul>
-      </section>
+      <div id="connection-status">
+        <span class="connection-marker"></span>
+        <span class="connection-text"></span>
+      </div>
+      <input id="input" type="text" />
+      <button onclick="sendData()">send</button>
+      <br />
+      <pre id="message-list"></pre>
     </main>
   </body>
+  <script>
+    var input = document.getElementById("input");
+    var messageList = document.getElementById("message-list");
+    var socket = new WebSocket("ws://localhost:8000/chat");
+    var connectionStatus = document.getElementById("connection-status");
+    var connMarker = document.querySelector(".connection-marker");
+    var connText = document.querySelector(".connection-text");
+
+    socket.onopen = function () {
+      if (connMarker.classList.contains("disconnected")) {
+        connMarker.classList.remove("disconnected");
+      }
+      connMarker.classList.add("connected");
+      connText.innerText = "connected";
+    };
+
+    socket.onmessage = function ({ data }) {
+      messageList.innerHTML += JSON.parse(data)["text"] + "\n";
+    };
+
+    socket.onclose = function () {
+      if (connMarker.classList.contains("connected")) {
+        connMarker.classList.remove("connected");
+      }
+      connMarker.classList.add("disconnected");
+      connText.innerText = "disconnected";
+    };
+
+    function sendData() {
+      socket.send(input.value);
+      input.value = "";
+    }
+  </script>
 </html>

@@ -1,21 +1,22 @@
-.message__container {
+#connection-status {
   display: flex;
-  flex-direction: row;
-  gap: 10px;
+  gap: 5px;
   align-items: center;
   margin-bottom: 10px;
 }
 
-.message__user {
-  font-weight: bold;
+.connection-marker {
+  height: 15px;
+  width: 15px;
+  border-radius: 50%;
 }
 
-.message__text {
-  background-color: rgb(127, 255, 212, 0.3);
+.connected {
+  background-color: rgb(127, 255, 212, 0.6);
   border: 1px solid rgb(127, 255, 212);
-  border-radius: 5px;
-  padding: 3px 5px;
 }
-.message__time {
-  font-size: 0.6em;
+
+.disconnected {
+  background-color: rgb(255, 127, 212, 0.6);
+  border: 1px solid rgb(255, 127, 212);
 }
